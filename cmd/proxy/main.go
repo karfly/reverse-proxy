@@ -42,6 +42,7 @@ var FlagDomain = flag.String("domain", "", "domain to configure")
 var FlagDebug = flag.Bool("debug", false, "more logs")
 var FlagTxURL = flag.Bool("tx-url", false, "show set domain record url instead of qr")
 var FlagProxyPass = flag.String("proxy-pass", "", "proxy pass url")
+var FlagPort = flag.Uint("port", 0, "port to listen on")
 
 type Handler struct {
 	h http.Handler
@@ -73,9 +74,10 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 func main() {
 	flag.Parse()
-	log.Println(*FlagProxyPass)
+	log.Println("Proxy pass: ", *FlagProxyPass)
+	log.Println("Port: ", *FlagPort)
 
-	cfg, err := loadConfig(FlagProxyPass)
+	cfg, err := loadConfig(FlagProxyPass, uint16(*FlagPort))
 	if err != nil {
 		panic("failed to load config: " + err.Error())
 	}
@@ -173,7 +175,7 @@ func getPublicIP() (string, error) {
 	return ip.Query, nil
 }
 
-func loadConfig(proxyPass *string) (*Config, error) {
+func loadConfig(proxyPass *string, port uint16) (*Config, error) {
 	var cfg Config
 
 	file := "./config.json"
@@ -218,6 +220,10 @@ func loadConfig(proxyPass *string) (*Config, error) {
 
 	if proxyPass != nil && *proxyPass != "" {
 		cfg.ProxyPass = *proxyPass
+	}
+
+	if port != 0 {
+		cfg.Port = port
 	}
 
 	// backwards compatibility with old configs
